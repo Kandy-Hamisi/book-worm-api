@@ -6,8 +6,8 @@ interface TokenPayload extends JwtPayload {
   userId: string;
 }
 
-interface AuthRequest extends Request {
-  user?: unknown;
+export interface AuthRequest extends Request {
+  user?: any;
 }
 
 const protectRoute = async (

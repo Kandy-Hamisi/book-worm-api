@@ -1,8 +1,9 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import cloudinary from "../config/cloudinary.js";
-import Book from "../models/Book.models.js";
+import Book, { BookDocument } from "../models/Book.models.js";
+import type { AuthRequest } from "../middleware/auth.middleware.js";
 
-export const createBook = async (req: Request, res: Response) => {
+export const createBook = async (req: AuthRequest, res: Response) => {
   try {
     const { title, caption, image, rating } = req.body;
 
@@ -15,12 +16,19 @@ export const createBook = async (req: Request, res: Response) => {
     const uploadResponse = await cloudinary.uploader.upload(image);
     const cloudinaryImageUrl = uploadResponse.secure_url;
 
+    //   ensure user is present from auth middleware
+    const userId = (req.user as any)?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     //   save to database
     const newBook = new Book({
       title,
       caption,
       image: cloudinaryImageUrl,
       rating,
+      user: userId,
     });
 
     await newBook.save();
@@ -33,27 +41,39 @@ export const createBook = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteBook = async (req: Request, res: Response) => {
+export const deleteBook = async (req: AuthRequest, res: Response) => {
   try {
-    const book = await Book.findById(req.params.id);
+    const book: BookDocument | null = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: "Book not found" });
 
-    //     check if user is the creator of the book
-    if (book.user.toString() !== req.user._id.toString()) {
+    // ensure user is present
+    const userId = (req.user as any)?._id;
+    if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    //     delete image from cloudinary as well
+    // check if user is the creator of the book
+    if (book.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    // delete image from cloudinary as well
     if (book.image && book.image.includes("cloudinary")) {
       try {
-        const publicId = book.image.split("/").pop()?.split(".")[0] ?? "";
-        await cloudinary.uploader.destroy(publicId);
-      } catch (deleteError: any) {
-        console.log("Error deleting image e from cloudinary", deleteError);
+        const lastSegment = book.image.split("/").pop();
+        const publicId = lastSegment ? lastSegment.split(".")[0] : "";
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      } catch (deleteError) {
+        console.log("Error deleting image from cloudinary", deleteError);
       }
     }
 
     await book.deleteOne();
-    res.status(200).json({ message: "Book deleted successfully" });
-  } catch (e: any) {}
+    return res.status(200).json({ message: "Book deleted successfully" });
+  } catch (e) {
+    console.log("Error in deleteBook:", e);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 };

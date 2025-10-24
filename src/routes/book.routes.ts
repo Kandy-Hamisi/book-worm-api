@@ -1,8 +1,8 @@
 import { Router } from "express";
 import protectRoute from "../middleware/auth.middleware.js";
-import { createBook } from "../controllers/book.controller.js";
+import { createBook, deleteBook } from "../controllers/book.controller.js";
 
 const router = Router();
 
 router.route("/").post(protectRoute, createBook);
-rout;
+router.route("/:id").delete(protectRoute, deleteBook);
