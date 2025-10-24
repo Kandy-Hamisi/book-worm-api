@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.models.js";
-const protectedRoute = async (req, res, next) => {
+const protectRoute = async (req, res, next) => {
     try {
         // get token
         const authHeader = req.header("Authorization");
@@ -34,5 +34,5 @@ const protectedRoute = async (req, res, next) => {
         return res.status(401).json({ message: "Unauthorized" });
     }
 };
-export default protectedRoute;
+export default protectRoute;
 //# sourceMappingURL=auth.middleware.js.map

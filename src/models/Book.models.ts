@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, Document, HydratedDocument } from "mongoose";
 
 export interface IBook {
   title: string;
@@ -8,7 +8,9 @@ export interface IBook {
   user: Types.ObjectId; // creator
 }
 
-const bookSchema = new mongoose.Schema(
+// Extend IBook with Document to represent a full Mongoose Document
+export type BookDocument = HydratedDocument<IBook>;
+const bookSchema = new mongoose.Schema<IBook>(
   {
     title: {
       type: String,
@@ -37,6 +39,6 @@ const bookSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const Book = mongoose.model("Book", bookSchema);
+const Book = mongoose.model<IBook>("Book", bookSchema);
 
 export default Book;
