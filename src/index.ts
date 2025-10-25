@@ -6,6 +6,7 @@ import { connectToDatabase } from "./config/db.js";
 
 // routes imports
 import userRoutes from "./routes/user.routes.js";
+import bookRoutes from "./routes/book.routes.js";
 
 const app = express();
 
@@ -18,8 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // routes
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/books", bookRoutes);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   connectToDatabase();
 });
