@@ -77,3 +77,31 @@ export const deleteBook = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// fetch with paginations
+export const fetchBooks = async (req: AuthRequest, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    const books = await Book.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("user", "username profileImage");
+
+    const totalBooks = await Book.countDocuments();
+
+    res.send({
+      books,
+      currentPage: page,
+      totalPages: Math.ceil(totalBooks / limit),
+      totalBooks,
+    });
+  } catch (e: any) {
+    console.log("Error in getting all the books", e);
+
+    return res.status(400).json({ message: "Invalid pagination parameters" });
+  }
+};
